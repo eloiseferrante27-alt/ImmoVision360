@@ -1,4 +1,4 @@
-## 📊 Rapport d'Audit Final (Zone Bronze)
+## Rapport d'Audit Final (Zone Bronze)
 *Généré le 29 Mars 2026 par `03_sanity_check.py`*
 
 | Indicateur | Valeur |
