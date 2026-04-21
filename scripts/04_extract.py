@@ -1,43 +1,61 @@
+from pathlib import Path
 import pandas as pd
-import os
 
-# Configuration des chemins
-INPUT_PATH = "data/raw/tabular/listings.csv"
-OUTPUT_PATH = "data/processed/filtered_elysee.csv"
-QUARTIER = "Élysée"
 
-# Sélection stratégique des colonnes (Hypothèses A et B)
+BASE_DIR = Path(__file__).resolve().parent.parent
+INPUT_PATH = BASE_DIR / "data" / "raw" / "tabular" / "listings.csv"
+OUTPUT_PATH = BASE_DIR / "data" / "processed" / "filtered_elysee.csv"
+TARGET_NEIGHBOURHOOD = "Élysée"
+
 COLS_TO_KEEP = [
-    'id', 'listing_url', 'last_scraped',                      # Identifiants
-    'host_id', 'host_response_time', 'host_response_rate',    # Hypothèse B (Social)
-    'calculated_host_listings_count',                         # Hypothèse A (Industrie)
-    'neighbourhood_cleansed', 'latitude', 'longitude',        # Localisation
-    'property_type', 'room_type', 'accommodates',             # Caractéristiques
-    'price', 'availability_365', 'number_of_reviews'          # Hypothèse A (Économie)
+    "id",
+    "listing_url",
+    "last_scraped",
+    "name",
+    "description",
+    "neighborhood_overview",
+    "picture_url",
+    "host_id",
+    "host_name",
+    "host_response_time",
+    "host_response_rate",
+    "host_is_superhost",
+    "host_identity_verified",
+    "calculated_host_listings_count",
+    "neighbourhood_cleansed",
+    "latitude",
+    "longitude",
+    "property_type",
+    "room_type",
+    "accommodates",
+    "price",
+    "availability_365",
+    "number_of_reviews",
+    "review_scores_rating",
+    "reviews_per_month",
 ]
 
-def run_extraction():
-    if not os.path.exists(INPUT_PATH):
-        print(f" Erreur : {INPUT_PATH} introuvable.")
-        return
 
-    print(f"Chargement et filtrage pour le quartier : {QUARTIER}...")
-    
-    # 1. Lecture
+def run_extraction() -> None:
+    if not INPUT_PATH.exists():
+        raise FileNotFoundError(f"CSV introuvable: {INPUT_PATH}")
+
     df = pd.read_csv(INPUT_PATH)
+    df_filtered = df[df["neighbourhood_cleansed"].fillna("") == TARGET_NEIGHBOURHOOD].copy()
 
-    # 2. Filtrage géographique
-    df_filtered = df[df['neighbourhood_cleansed'] == QUARTIER].copy()
+    available_columns = [column for column in COLS_TO_KEEP if column in df_filtered.columns]
+    missing_columns = [column for column in COLS_TO_KEEP if column not in df_filtered.columns]
 
-    # 3. Sélection des colonnes
-    df_final = df_filtered[COLS_TO_KEEP]
-
-    # 4. Sauvegarde
-    os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
+    df_final = df_filtered[available_columns].copy()
+    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     df_final.to_csv(OUTPUT_PATH, index=False)
-    
-    print(f" Extraction terminée ! Fichier sauvegardé : {OUTPUT_PATH}")
-    print(f"Volume extrait : {df_final.shape[0]} lignes et {df_final.shape[1]} colonnes.")
+
+    print(f"Extraction terminée vers: {OUTPUT_PATH}")
+    print(f"Lignes: {df_final.shape[0]} | Colonnes: {df_final.shape[1]}")
+
+    if missing_columns:
+        print("Colonnes absentes ignorées:", ", ".join(missing_columns))
+
 
 if __name__ == "__main__":
     run_extraction()
